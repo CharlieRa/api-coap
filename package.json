@@ -3,13 +3,12 @@
   "main": "server.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/scotch-io/node-token-authentication"
+    "url": "https://github.com/CharlieRa/api-coap.git"
   },
   "scripts": {
     "start": "node server.js"
   },
-  "author": "Chris Sevilleja <scotch.io>",
-  "license": "MIT",
+  "author": "Carlos Ramart",
   "dependencies": {
     "bcrypt": "^0.8.7",
     "body-parser": "~1.0.1",

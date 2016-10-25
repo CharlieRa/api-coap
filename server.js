@@ -1,7 +1,3 @@
-// BASE SETUP
-// =============================================================================
-
-// call the packages we need
 var express    = require('express');
 var bodyParser = require('body-parser');
 var app        = express();
@@ -13,10 +9,17 @@ var jwt    = require('jsonwebtoken');
 var trimNewlines = require('trim-newlines');
 var config = require('./config');
 
-//==========
-// Models require
+/**
+* Models
+*/
 var User = require('./app/models/user');
-app.use(morgan('dev')); // log requests to the console
+// var Bear     = require('./app/models/bear');
+
+
+/**
+* Log requests to the console
+*/
+app.use(morgan('dev'));
 
 /**
 * Configure body parser
@@ -24,9 +27,12 @@ app.use(morgan('dev')); // log requests to the console
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var port = process.env.PORT || 8888; // set our port
+var port = process.env.PORT || 8888;
 
-mongoose.connect(config.database, function(err) {
+/**
+* Connect to database
+*/
+mongoose.connect(config.databaseLocal , function(err) {
 	if(err) throw err;
   console.log('Successfully connected to MongoDB');
 });
@@ -36,222 +42,276 @@ mongoose.connect(config.database, function(err) {
 */
 app.set('superSecret', config.secret);
 
-// var Bear     = require('./app/models/bear');
-
 /**
 * Rutas de la API
 */
 // =============================================================================
 
-// create our router
+/* Craendo nuestro Router */
 var router = express.Router();
 
-router.get('/', function(req, res) {
-	res.json({ message: 'hooray! welcome to our api!' });
+router.get('/', function(request, response) {
+	response.json({ message: 'hooray! welcome to our api!' });
 });
 
-router.post('/auth', function(req, res) {
-  // find the user
-  User.findOne({ username: req.body.username }, function(err, user) {
+/**
+* Ruta para crear usuarios nuevos
+*/
+router.post('/signup', function(request, response) {
+	console.log(request.body);
+  if (!request.body.username || !request.body.password) {
+    res.json({success: false, msg: 'Please give a username and password.'});
+  } else {
+    var newUser = new User({
+      username: request.body.username,
+      password: request.body.password
+    });
+    // save the user
+    newUser.save(function(err) {
+      if (err) {
+        return response.json({success: false, msg: 'Username already exists.'});
+      }
+      response.json({success: true, msg: 'Successful created new user.'});
+    });
+  }
+});
+
+/**
+* Ruta para autenticar usuarios
+*/
+router.post('/auth', function(request, response) {
+  User.findOne({ username: request.body.username }, function(err, user) {
     if (err) throw err;
 
     if (!user) {
-      res.json({ success: false, message: 'Authentication failed. User not found.' });
+      response.json({ success: false, message: 'Authentication failed. Usuario no encontrado.' });
     } else if (user) {
-
-			// test a matching password
-			user.comparePassword(req.body.password, function(err, isMatch) {
+			/* Comparacion de passwords */
+			user.comparePassword(request.body.password, function(err, isMatch) {
 				if (err) throw err;
-				console.log(isMatch); // -&gt; Password123: true
 				if(isMatch) {
-	        // if user is found and password is right
-	        // create a token
+	        // if user is found and password is right, create a token
 	        var token = jwt.sign(user, app.get('superSecret'), {
-	          expiresInMinutes: 1440 // expires in 24 hours
+						expiresIn : 60*60*24 /* En segundos */
 	        });
 
 	        // return the information including token as JSON
-	        res.json({
+	        response.json({
 	          success: true,
-	          message: 'Enjoy your token!',
 	          token: token
 	        });
 				}else{
-					res.json({ success: false, message: 'Authentication failed. Wrong password.' });
+					response.json({ success: false, message: 'Authentication failed. Password erroneo.' });
 				}
 			});
-
-      // check if password matches
-      // if (user.password != req.body.password) {
-      //   res.json({ success: false, message: 'Authentication failed. Wrong password.' });
-      // } else {
-			//
-      //   // if user is found and password is right
-      //   // create a token
-      //   var token = jwt.sign(user, app.get('superSecret'), {
-      //     expiresInMinutes: 1440 // expires in 24 hours
-      //   });
-			//
-      //   // return the information including token as JSON
-      //   res.json({
-      //     success: true,
-      //     message: 'Enjoy your token!',
-      //     token: token
-      //   });
-      // }
     }
-
   });
 });
 
 /**
-* Middleware to use for all requests
+* Middleware de verificacion de token
 */
-router.use(function(req, res, next) {
-	console.log('Something is happening.');
-	// next();
+router.use(function(request, response, next) {
 
-	// check header or url parameters or post parameters for token
-	var token = req.body.token || req.query.token || req.headers['x-access-token'];
+	/* Check del token en header */
+	var token = request.body.token || request.query.token || request.headers['x-access-token'];
 
-	// decode token
 	if (token) {
-		// verifies secret and checks exp
 		jwt.verify(token, app.get('superSecret'), function(err, decoded) {
 			if (err) {
-				return res.json({ success: false, message: 'Failed to authenticate token.' });
+				console.log(err);
+				return response.json({ success: false, message: 'Error al autenticar el token. Mensaje: '+err['message'] });
 			} else {
-				// if everything is good, save to request for use in other routes
-				req.decoded = decoded;
+				request.decoded = decoded;
 				next();
 			}
 		});
 
 	} else {
-
-		// if there is no token
-		// return an error
-		return res.status(403).send({
-				success: false,
-				message: 'No token provided.'
+		return response.status(403).send({
+			success: false,
+			message: 'No token provided.'
 		});
-
 	}
 });
 
-
-// on routes that end in /bears
-// ----------------------------------------------------
-// on routes that end in /bears/:bear_id
-// ----------------------------------------------------
-router.route('/motes')
-	.get(function(request, response) {
- // 	var coapConnection = {
- //  host: 'localhost',
- //  pathname: '/yo',
- //  method: 'GET',
- //  confirmable: true
- // }
- // var req = coap.request(coapConnection)
-			var req = coap.request("coap://[bbbb::1415:92cc:0:2]/i");
-			// console.log(req);
-			var dataResponse;
-			req.on('response', function(res) {
-				res.pipe(bl(function(err, data) {
-					// console.log(data.toString());
-					// console.log(trimNewlines(data.toString()));
-					 dataResponse = trimNewlines(data.toString());
-				 }));
-			});
-			req.end();
-			// var json = JSON.parse(dataResponse);
-			// console.log(json);
-			console.log(dataResponse);
-			response.json({ response: 'yes' });
-			});
-
 /**
-* User Api Routes def
+* Users Routes
 */
 router.route('/users')
-	.get(function(req, res) {
+	.get(function(request, response) {
 	  User.find(function(err, users) {
-	    res.json(users);
+			if (err)
+				response.send(err);
+	    response.json(users);
 	  });
 	});
 
-router.route('/bears')
-	.post(function(req, res) {
-
-		var bear = new Bear();		// create a new instance of the Bear model
-		bear.name = req.body.name;  // set the bears name (comes from the request)
-
-		bear.save(function(err) {
+router.route('/users/:user_id')
+	.get(function(request, response) {
+		User.findById(request.params.user_id, function(err, user) {
 			if (err)
-				res.send(err);
-
-			res.json({ message: 'Bear created!' });
-		});
-
-	})
-
-	.get(function(req, res) {
-		Bear.find(function(err, bears) {
-			if (err)
-				res.send(err);
-
-			res.json(bears);
-		});
-	});
-
-// on routes that end in /bears/:bear_id
-// ----------------------------------------------------
-router.route('/bears/:bear_id')
-
-	// get the bear with that id
-	.get(function(req, res) {
-		Bear.findById(req.params.bear_id, function(err, bear) {
-			if (err)
-				res.send(err);
-			res.json(bear);
+				response.send(err);
+			response.json(user);
 		});
 	})
-
-	// update the bear with this id
-	.put(function(req, res) {
-		Bear.findById(req.params.bear_id, function(err, bear) {
-
-			if (err)
-				res.send(err);
-
-			bear.name = req.body.name;
-			bear.save(function(err) {
+		.put(function(request, response) {
+			User.findById(request.params.user_id, function(err, user) {
 				if (err)
-					res.send(err);
+					response.send(err);
 
-				res.json({ message: 'Bear updated!' });
+				user.username = request.body.username;
+				user.save(function(err) {
+					if (err)
+						response.send(err);
+					console.log(user);
+					response.json({ message: 'User updated!' });
+				});
 			});
-
-		});
-	})
-
-	// delete the bear with this id
-	.delete(function(req, res) {
-		Bear.remove({
-			_id: req.params.bear_id
-		}, function(err, bear) {
+		})
+	.delete(function(request, response) {
+		User.remove({
+			_id: request.params.user_id
+		}, function(err, user) {
 			if (err)
-				res.send(err);
-
-			res.json({ message: 'Successfully deleted' });
+				response.send(err);
+			console.log(user);
+			response.json({ message: 'Successfully deleted' });
 		});
 	});
 
+/**
+* Motes Routes
+*/
+router.route('/motes')
+	.get(function(request, response) {
+		// var req = coap.request("coap://[bbbb::12:4b00:3a5:6b3c]/i");
+		var req = coap.request("coap://[bbbb::12:4b00:3a5:6b3c]/root");
+		var dataResponse;
+		console.log(req.status);
+		req.on('error', function(err) {
+	    console.log(err);
+			// req.end();
+			// return;
+			// console.log(req);
+			response.json({ response: 'error' });
+		});
+		req.on('timeout', function () {
+		  // Timeout happend. Server received request, but not handled it
+		  // (i.e. doesn't send any response or it took to long).
+		  // You don't know what happend.
+		  // It will emit 'error' message as well (with ECONNRESET code).
+			response.json({ response: 'timeout' });
+		  console.log('timeout');
+		});
+		req.on('response', function(res) {
+			console.log("res: "+res);
+			if(!res) {
+				console.log("not respond");
+			}
+			res.pipe(bl(function(err, data) {
+				console.log("err: "+err);
+				console.log("data: "+data);
+				// if(err) {
+				// 	console.log(err);
+				// }
+				response.json({ response: 'yes' });
+				 dataResponse = trimNewlines(data.toString());
+			 }));
+		});
+		req.end();
+		// var json = JSON.parse(dataResponse);
+		// console.log(json);
+		// console.log(dataResponse);
+		// response.json({ response: 'yes' });
+	});
 
-// REGISTER OUR ROUTES -------------------------------
+router.route('/motes/:mote_ip')
+	.get(function(request, response) {
+		// var commandList = {};
+		var commandList = {
+			'root': 'root',
+			'info': 'i',
+			'temperature': 'temp',
+			'humidity': 'hum',
+		};
+		// commandList['root'] = 'root';
+		console.log(request.params.mote_ip);
+		console.log(request.query.command);
+		var command = request.query.command;
+		if(!(command in commandList)){
+			response.json({ response: 'Comando invalido. Lista de comandos disponibles: ' });
+			return;
+		}
+		if(!request.query.command){
+			response.json({ response: 'Debe indicar un comando' });
+			return;
+		}
+		// var mote_ip = "bbbb::12:4b00:3a5:6b3c";
+		var mote_ip = request.params.mote_ip;
+		// var req = coap.request("coap://["+request.params.mote_ip+"]/root");
+
+		var req = coap.request("coap://["+mote_ip+"]/"+commandList[command]+"");
+		// var req = coap.request("coap://[bbbb::12:4b00:3a5:6b3c]/root");
+		req.on('error', function(err) {
+			console.log(err);
+			response.json({ response: 'error' });
+		});
+
+		req.on('timeout', function () {
+			response.json({ response: 'timeout' });
+			console.log('timeout');
+		});
+
+		req.on('response', function(res) {
+			console.log("res: "+res);
+			if(!res) {
+				console.log("not respond");
+			}
+			res.pipe(bl(function(err, data) {
+				console.log("err: "+err);
+				console.log("data: "+data);
+				// if(err) {
+				// 	console.log(err);
+				// }
+				response.json({ response: 'yes' });
+				 dataResponse = trimNewlines(data.toString());
+			 }));
+		});
+		req.end();
+	})
+	.put(function(request, response) {
+		User.findById(req.params.user_id, function(err, user) {
+			if (err)
+				response.send(err);
+
+			user.username = request.body.username;
+			user.save(function(err) {
+				if (err)
+					response.send(err);
+				console.log(user);
+				response.json({ message: 'User updated!' });
+			});
+		});
+	})
+	.delete(function(request, response) {
+		User.remove({
+			_id: request.params.user_id
+		}, function(err, user) {
+			if (err)
+				response.send(err);
+			console.log(user);
+			response.json({ message: 'Successfully deleted' });
+		});
+	});
+
+/**
+* Registro de las rutas
+*/
 app.use('/api', router);
 
-// START THE SERVER
-// =============================================================================
+/**
+* Inicio del Servidor
+*/
 app.listen(port);
-console.log('Magic happens on port ' + port);
+console.log('Servidor levantado en el puerto' + port);
