@@ -8,14 +8,15 @@ var mongoose    = require('mongoose');
 var jwt    = require('jsonwebtoken');
 var trimNewlines = require('trim-newlines');
 var config = require('./config');
-
+var cors = require('cors');
 /**
 * Models
 */
 var User = require('./app/models/user');
-// var Bear     = require('./app/models/bear');
+var Mote = require('./app/models/mote');
+var Network = require('./app/models/network');
 
-
+app.use(cors());
 /**
 * Log requests to the console
 */
@@ -51,16 +52,15 @@ app.set('superSecret', config.secret);
 var router = express.Router();
 
 router.get('/', function(request, response) {
-	response.json({ message: 'hooray! welcome to our api!' });
+	response.json({ message: 'API CoAP' });
 });
 
 /**
 * Ruta para crear usuarios nuevos
 */
 router.post('/signup', function(request, response) {
-	console.log(request.body);
   if (!request.body.username || !request.body.password) {
-    res.json({success: false, msg: 'Please give a username and password.'});
+    res.status(400).json({success: false, msg: 'Porfavor indica un usuario y contraseña.'});
   } else {
     var newUser = new User({
       username: request.body.username,
@@ -69,9 +69,11 @@ router.post('/signup', function(request, response) {
     // save the user
     newUser.save(function(err) {
       if (err) {
-        return response.json({success: false, msg: 'Username already exists.'});
+				/* Status 409 de 'Conflic' si el usuario ya existe */
+        return response.status(409).json({success: false, msg: 'El usuario ya existe. Intente otro.'});
       }
-      response.json({success: true, msg: 'Successful created new user.'});
+			/* Estatus 201 de resoursce*/
+      response.status(201).json({success: true, msg: 'Usuario creado exitosamente.'});
     });
   }
 });
@@ -84,7 +86,7 @@ router.post('/auth', function(request, response) {
     if (err) throw err;
 
     if (!user) {
-      response.json({ success: false, message: 'Authentication failed. Usuario no encontrado.' });
+			response.status(400).json({ success: false, message: 'Authentication failed. Usuario no encontrado.' });
     } else if (user) {
 			/* Comparacion de passwords */
 			user.comparePassword(request.body.password, function(err, isMatch) {
@@ -101,7 +103,7 @@ router.post('/auth', function(request, response) {
 	          token: token
 	        });
 				}else{
-					response.json({ success: false, message: 'Authentication failed. Password erroneo.' });
+					response.status(400).json({ success: false, message: 'Authentication failed. Password erroneo.' });
 				}
 			});
     }
@@ -114,19 +116,17 @@ router.post('/auth', function(request, response) {
 router.use(function(request, response, next) {
 
 	/* Check del token en header */
-	var token = request.body.token || request.query.token || request.headers['x-access-token'];
+	var token = request.body.token || request.query.token || request.headers['x-access-token'] || request.headers['authorization'].split(' ')[1];
 
 	if (token) {
 		jwt.verify(token, app.get('superSecret'), function(err, decoded) {
 			if (err) {
-				console.log(err);
 				return response.json({ success: false, message: 'Error al autenticar el token. Mensaje: '+err['message'] });
 			} else {
 				request.decoded = decoded;
 				next();
 			}
 		});
-
 	} else {
 		return response.status(403).send({
 			success: false,
@@ -185,45 +185,30 @@ router.route('/users/:user_id')
 */
 router.route('/motes')
 	.get(function(request, response) {
-		// var req = coap.request("coap://[bbbb::12:4b00:3a5:6b3c]/i");
-		var req = coap.request("coap://[bbbb::12:4b00:3a5:6b3c]/root");
-		var dataResponse;
-		console.log(req.status);
-		req.on('error', function(err) {
-	    console.log(err);
-			// req.end();
-			// return;
-			// console.log(req);
-			response.json({ response: 'error' });
+		Mote.find(function(err, motes) {
+			if (err)
+				response.send(err);
+	    response.json(motes);
+	  });
+	})
+	.post(function(request, response) {
+
+		var mote = new Mote();
+		mote.name = request.body.name;
+		mote.mac = request.body.mac;
+		mote.panid = request.body.panid;
+		// mote.id16b = request.body.id16b;
+		mote.eui64 = request.body.eui64;
+		mote.dagroot = request.body.dagroot;
+		mote.ipv6 = request.body.ipv6;
+		mote.commands = request.body.commands;
+		console.log(request.body);
+		mote.save(function(err) {
+			if (err)
+				response.send(err);
+			response.json({ message: 'Mote created!' });
 		});
-		req.on('timeout', function () {
-		  // Timeout happend. Server received request, but not handled it
-		  // (i.e. doesn't send any response or it took to long).
-		  // You don't know what happend.
-		  // It will emit 'error' message as well (with ECONNRESET code).
-			response.json({ response: 'timeout' });
-		  console.log('timeout');
-		});
-		req.on('response', function(res) {
-			console.log("res: "+res);
-			if(!res) {
-				console.log("not respond");
-			}
-			res.pipe(bl(function(err, data) {
-				console.log("err: "+err);
-				console.log("data: "+data);
-				// if(err) {
-				// 	console.log(err);
-				// }
-				response.json({ response: 'yes' });
-				 dataResponse = trimNewlines(data.toString());
-			 }));
-		});
-		req.end();
-		// var json = JSON.parse(dataResponse);
-		// console.log(json);
-		// console.log(dataResponse);
-		// response.json({ response: 'yes' });
+
 	});
 
 router.route('/motes/:mote_ip')
@@ -271,6 +256,17 @@ router.route('/motes/:mote_ip')
 			res.pipe(bl(function(err, data) {
 				console.log("err: "+err);
 				console.log("data: "+data);
+				console.log(data[0]);
+				console.log(data[1]);
+				console.log(parseInt(data[0]));
+				// var temp1 = (data[0] << 8) + data[1]
+				// var temperatura1 =-46.86+175.72*temp1/65536
+				// console.log(temp1);
+				// console.log(temperatura1);
+				// var hum1 = (data[0] << 8)+data[1]
+				// console.log(hum1);
+				// var humedad1 = -6.0+125.0 * hum1 / 65536
+				// console.log(humedad1);
 				// if(err) {
 				// 	console.log(err);
 				// }
