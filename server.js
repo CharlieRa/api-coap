@@ -50,6 +50,9 @@ app.set('superSecret', config.secret);
 
 /* Craendo nuestro Router */
 var router = express.Router();
+// var commandsRouter = express.Router({mergeParams: true})
+
+
 
 router.get('/', function(request, response) {
 	response.json({ message: 'API CoAP' });
@@ -199,9 +202,10 @@ router.route('/motes')
 		mote.panid = request.body.panid;
 		// mote.id16b = request.body.id16b;
 		mote.eui64 = request.body.eui64;
-		mote.dagroot = request.body.dagroot;
+		mote.dagroot = false;
 		mote.ipv6 = request.body.ipv6;
 		mote.commands = request.body.commands;
+		mote.commands = [];
 		console.log(request.body);
 		mote.save(function(err) {
 			if (err)
@@ -211,27 +215,9 @@ router.route('/motes')
 
 	});
 
+
 router.route('/motes/:mote_ip')
 	.get(function(request, response) {
-		// var commandList = {};
-		var commandList = {
-			'root': 'root',
-			'info': 'i',
-			'temperature': 'temp',
-			'humidity': 'hum',
-		};
-		// commandList['root'] = 'root';
-		console.log(request.params.mote_ip);
-		console.log(request.query.command);
-		var command = request.query.command;
-		if(!(command in commandList)){
-			response.json({ response: 'Comando invalido. Lista de comandos disponibles: ' });
-			return;
-		}
-		if(!request.query.command){
-			response.json({ response: 'Debe indicar un comando' });
-			return;
-		}
 		// var mote_ip = "bbbb::12:4b00:3a5:6b3c";
 		var mote_ip = request.params.mote_ip;
 		// var req = coap.request("coap://["+request.params.mote_ip+"]/root");
@@ -299,6 +285,84 @@ router.route('/motes/:mote_ip')
 			console.log(user);
 			response.json({ message: 'Successfully deleted' });
 		});
+	});
+
+/**
+* Rutas de los comandos de los nodos
+*/
+router.route('/commands/:mote_ip')
+	.get(function(request, response) {
+		var mote_ip = request.params.mote_ip;
+		var mote_ip = 'bbbb::1415:92cc:0:2';
+		console.log(mote_ip);
+		var command = '.well-known/core';
+		var req = coap.request("coap://["+mote_ip+"]/"+command);
+		var errArray = [];
+		req.on('error', function(err) {
+			errArray.push(err);
+			if(errArray.length >= 3) {
+				response.status(400).json({ response: err });
+			}
+		});
+
+		req.on('timeout', function (timeout) {
+			console.log('timeout');
+			response.json({ response: timeout });
+		});
+
+		req.on('response', function(res) {
+			console.log("res: "+res);
+			// if(!res) {
+			// 	console.log("not respond");
+			// }
+			res.pipe(bl(function(err, data) {
+				console.log("data: "+data);
+				var dataResponse = trimNewlines(data.toString()).split(',');
+				response.status(200).json({
+					mote: mote_ip,
+					query: command,
+					response: dataResponse
+				});
+			 }));
+		});
+		req.end();
+	});
+
+	router.route('/lala', function() {
+		console.log(data[0]);
+		console.log(data[1]);
+		console.log(parseInt(data[0]));
+		// var temp1 = (data[0] << 8) + data[1]
+		// var temperatura1 =-46.86+175.72*temp1/65536
+		// console.log(temp1);
+		// console.log(temperatura1);
+		// var hum1 = (data[0] << 8)+data[1]
+		// console.log(hum1);
+		// var humedad1 = -6.0+125.0 * hum1 / 65536
+		// console.log(humedad1);
+		// if(err) {
+		// 	console.log(err);
+		// }
+		// var commandList = {};
+		var commandList = {
+			'root': 'root',
+			'info': 'i',
+			'temperature': 'temp',
+			'humidity': 'hum',
+		};
+		// commandList['root'] = 'root';
+		console.log(request.params.mote_ip);
+		console.log(request.query.command);
+		var command = request.query.command;
+		if(!(command in commandList)){
+			response.json({ response: 'Comando invalido. Lista de comandos disponibles: ' });
+			return;
+		}
+		if(!request.query.command){
+			response.json({ response: 'Debe indicar un comando' });
+			return;
+		}
+		response.json({ message: 'lala'})
 	});
 
 /**
