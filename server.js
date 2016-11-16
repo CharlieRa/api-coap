@@ -33,9 +33,10 @@ var port = process.env.PORT || 8888;
 /**
 * Connect to database
 */
-mongoose.connect(config.databaseLocal , function(err) {
-	if(err) throw err;
-  console.log('Successfully connected to MongoDB');
+mongoose.connect(config.databaseLocal);
+var db = mongoose.connection;
+db.on('error', function(err){
+	return console.log(err);
 });
 
 /**
@@ -145,7 +146,7 @@ router.route('/users')
 	.get(function(request, response) {
 	  User.find(function(err, users) {
 			if (err)
-				response.send(err);
+				response.status(404).send(err);
 	    response.json(users);
 	  });
 	});
@@ -154,7 +155,7 @@ router.route('/users/:user_id')
 	.get(function(request, response) {
 		User.findById(request.params.user_id, function(err, user) {
 			if (err)
-				response.send(err);
+				response.status(404).send(err);
 			response.json(user);
 		});
 	})
@@ -184,13 +185,85 @@ router.route('/users/:user_id')
 	});
 
 /**
+* Networks Routes
+*/
+
+router.route('/networks')
+	.get(function(request, response) {
+	  Network.find().populate(['motes', 'users']).exec(function(err, network) {
+			if (err)
+				response.status(400).send(err);
+	    response.json(network);
+	  });
+	})
+	.post(function(request, response) {
+		console.log(request.body);
+		if (!request.body.name || !request.body.address || !request.body.panid) {
+			console.log("nombre");
+			response.status(400).json({success: false, msg: 'Debes indicar al menos un nombre, ubicacion(dirección) y un pan-id de la Red.'});
+		} else {
+			var newNetwork = new Network({
+				name: request.body.name,
+		    address: request.body.address,
+		    panid: request.body.panid,
+		    motes: request.body.motes,
+		    users: request.body.users
+			});
+
+			newNetwork.save(function(err) {
+				if (err) {
+					/* Status 409 de 'Conflic' si el usuario ya existe */
+					return response.status(409).json({success: false, msg: 'El la red ya existe. Intente otro nombre.'});
+				}
+				/* Estatus 201 de resoursce*/
+				response.status(201).json({success: true, msg: 'Red creado exitosamente.'});
+			});
+		}
+	});
+
+router.route('/networks/:network_id')
+	.get(function(request, response) {
+		Network.findById(request.params.network_id, function(err, network) {
+			if (err)
+				response.send(err);
+			response.json(network);
+		});
+	})
+	.put(function(request, response) {
+		Network.findById(request.params.network_id, function(err, network) {
+			if (err)
+				response.send(err);
+
+			network.username = request.body.username;
+			network.save(function(err) {
+				if (err)
+					response.send(err);
+				console.log(network);
+				response.json({ message: 'Network updated!' });
+			});
+		});
+	})
+	.delete(function(request, response) {
+		Network.remove({
+			_id: request.params.network_id
+		}, function(err, network) {
+			if (err)
+				response.send(err);
+			console.log(network);
+			response.json({ message: 'Network Successfully deleted' });
+		});
+	});
+
+/**
 * Motes Routes
 */
 router.route('/motes')
 	.get(function(request, response) {
 		Mote.find(function(err, motes) {
-			if (err)
+			if (err) {
 				response.send(err);
+				console.log("assas");
+			}
 	    response.json(motes);
 	  });
 	})
@@ -287,15 +360,51 @@ router.route('/motes/:mote_ip')
 		});
 	});
 
+/**/
+
+router.route('/motes/:mote_ip/commands')
+.get(function(request, response){
+	var mote_ip = request.params.mote_ip;
+	// var mote_ip = 'bbbb::1415:92cc:0:2';
+	console.log(mote_ip);
+	var command = '.well-known/core';
+	var req = coap.request("coap://["+mote_ip+"]/"+command);
+	var errArray = [];
+	req.on('error', function(err) {
+		errArray.push(err);
+		if(errArray.length >= 3) {
+			response.status(400).json({ response: err });
+		}
+	});
+
+	req.on('timeout', function (timeout) {
+		console.log('timeout');
+		response.json({ response: timeout });
+	});
+
+	req.on('response', function(res) {
+		console.log("res: "+res);
+		res.pipe(bl(function(err, data) {
+			console.log("data: "+data);
+			var dataResponse = trimNewlines(data.toString()).split(',');
+			response.status(200).json({
+				mote: mote_ip,
+				query: command,
+				response: dataResponse
+			});
+		 }));
+	});
+	req.end();
+});
+
 /**
 * Rutas de los comandos de los nodos
 */
-router.route('/commands/:mote_ip')
+router.route('/motes/:mote_ip/commands/:command')
 	.get(function(request, response) {
-		var mote_ip = request.params.mote_ip;
-		var mote_ip = 'bbbb::1415:92cc:0:2';
+		var command = request.params.command;
 		console.log(mote_ip);
-		var command = '.well-known/core';
+		console.log(command);
 		var req = coap.request("coap://["+mote_ip+"]/"+command);
 		var errArray = [];
 		req.on('error', function(err) {
@@ -306,15 +415,11 @@ router.route('/commands/:mote_ip')
 		});
 
 		req.on('timeout', function (timeout) {
-			console.log('timeout');
-			response.json({ response: timeout });
+			response.status(503).json({ response: timeout });
 		});
 
 		req.on('response', function(res) {
 			console.log("res: "+res);
-			// if(!res) {
-			// 	console.log("not respond");
-			// }
 			res.pipe(bl(function(err, data) {
 				console.log("data: "+data);
 				var dataResponse = trimNewlines(data.toString()).split(',');
@@ -326,6 +431,14 @@ router.route('/commands/:mote_ip')
 			 }));
 		});
 		req.end();
+	})
+	.post(function(request, response) {
+		console.log(request.body);
+		response.json({ message: 'User updated!' });
+	})
+	.put(function(request, response) {
+		console.log(request.body);
+		response.json({ message: 'User updated!' });
 	});
 
 	router.route('/lala', function() {

@@ -9,7 +9,8 @@ var mongoose = require('mongoose'),
 
 var UserSchema = new Schema({
     username: { type: String, required: true },
-    password: { type: String, required: true }
+    password: { type: String, required: true },
+    admin: { type: Boolean, required: true, default: false }
 });
 
 
@@ -41,10 +42,3 @@ UserSchema.methods.comparePassword = function(candidatePassword, cb) {
 };
 
 module.exports = mongoose.model('User', UserSchema);
-
-// set up a mongoose model and pass it using module.exports
-// module.exports = mongoose.model('User', new Schema({
-//     username: String,
-//     password: String,
-//     admin: Boolean
-// }));
