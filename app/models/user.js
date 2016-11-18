@@ -10,7 +10,8 @@ var mongoose = require('mongoose'),
 var UserSchema = new Schema({
     username: { type: String, required: true },
     password: { type: String, required: true },
-    admin: { type: Boolean, required: true, default: false }
+    admin: { type: Boolean, default: false },
+    networks: [{ type: Schema.Types.ObjectId, ref: 'Network', default: [] }]
 });
 
 

@@ -9,6 +9,8 @@ var jwt    = require('jsonwebtoken');
 var trimNewlines = require('trim-newlines');
 var config = require('./config');
 var cors = require('cors');
+var reversePopulate = require('mongoose-reverse-populate');
+// var jwt = require('express-jwt');
 /**
 * Models
 */
@@ -66,9 +68,11 @@ router.post('/signup', function(request, response) {
   if (!request.body.username || !request.body.password) {
     res.status(400).json({success: false, msg: 'Porfavor indica un usuario y contraseña.'});
   } else {
+
     var newUser = new User({
       username: request.body.username,
-      password: request.body.password
+      password: request.body.password,
+			admin: request.body.admin
     });
     // save the user
     newUser.save(function(err) {
@@ -93,6 +97,7 @@ router.post('/auth', function(request, response) {
 			response.status(400).json({ success: false, message: 'Authentication failed. Usuario no encontrado.' });
     } else if (user) {
 			/* Comparacion de passwords */
+			console.log(user);
 			user.comparePassword(request.body.password, function(err, isMatch) {
 				if (err) throw err;
 				if(isMatch) {
@@ -128,6 +133,7 @@ router.use(function(request, response, next) {
 				return response.json({ success: false, message: 'Error al autenticar el token. Mensaje: '+err['message'] });
 			} else {
 				request.decoded = decoded;
+				request.user = decoded._doc;
 				next();
 			}
 		});
@@ -139,14 +145,24 @@ router.use(function(request, response, next) {
 	}
 });
 
+
+/**
+* User Logged in Route
+*/
+router.route('/me')
+.get(function(request, response) {
+	response.json(request.user);
+});
+
 /**
 * Users Routes
 */
 router.route('/users')
 	.get(function(request, response) {
-	  User.find(function(err, users) {
+		User.find().populate(['networks']).exec(function(err, users) {
 			if (err)
-				response.status(404).send(err);
+				response.status(400).send(err);
+			console.log(users);
 	    response.json(users);
 	  });
 	});
@@ -159,20 +175,22 @@ router.route('/users/:user_id')
 			response.json(user);
 		});
 	})
-		.put(function(request, response) {
-			User.findById(request.params.user_id, function(err, user) {
+	.put(function(request, response) {
+		User.findById(request.params.user_id, function(err, user) {
+			if (err)
+				response.send(err);
+
+			user.username = request.body.username;
+			user.password = request.body.password;
+			user.admin = request.body.admin;
+			user.save(function(err) {
 				if (err)
 					response.send(err);
-
-				user.username = request.body.username;
-				user.save(function(err) {
-					if (err)
-						response.send(err);
-					console.log(user);
-					response.json({ message: 'User updated!' });
-				});
+				console.log(user);
+				response.json({ message: 'User updated!' });
 			});
-		})
+		});
+	})
 	.delete(function(request, response) {
 		User.remove({
 			_id: request.params.user_id
@@ -190,31 +208,46 @@ router.route('/users/:user_id')
 
 router.route('/networks')
 	.get(function(request, response) {
-	  Network.find().populate(['motes', 'users']).exec(function(err, network) {
+	  Network.find().populate(['motes']).exec(function(err, network) {
 			if (err)
 				response.status(400).send(err);
+				// User.find({ networks: {$elemMatch: { _id: network._id}} }).exec(function(err, user){
+
+		 User.find().elemMatch('networks', {'networks.id': network._id}).exec(function(err, user){
+			 console.log(user);
+		 });
 	    response.json(network);
 	  });
 	})
 	.post(function(request, response) {
 		console.log(request.body);
 		if (!request.body.name || !request.body.address || !request.body.panid) {
-			console.log("nombre");
 			response.status(400).json({success: false, msg: 'Debes indicar al menos un nombre, ubicacion(dirección) y un pan-id de la Red.'});
 		} else {
+			console.log("adssadsad");
+			console.log(request.body.users);
+			// User.findByIdAndUpdate({ "_id": { "$in": request.body.users } },
+			//   {$push: {"messages": {title: title, msg: msg}}},
+			//   {safe: true, upsert: true},
+			//   function(err, model) {
+			//       console.log(err);
+			//   }
+			// );
 			var newNetwork = new Network({
 				name: request.body.name,
 		    address: request.body.address,
 		    panid: request.body.panid,
-		    motes: request.body.motes,
-		    users: request.body.users
+		    motes: request.body.motes
 			});
 
-			newNetwork.save(function(err) {
+			newNetwork.save(function(err, network) {
 				if (err) {
 					/* Status 409 de 'Conflic' si el usuario ya existe */
 					return response.status(409).json({success: false, msg: 'El la red ya existe. Intente otro nombre.'});
 				}
+				User.update({ "_id": { "$in": request.body.users } },{$push: { networks: network._id }}, function(err, users) {
+					console.log(users);
+				});
 				/* Estatus 201 de resoursce*/
 				response.status(201).json({success: true, msg: 'Red creado exitosamente.'});
 			});
@@ -350,13 +383,13 @@ router.route('/motes/:mote_ip')
 		});
 	})
 	.delete(function(request, response) {
-		User.remove({
-			_id: request.params.user_id
-		}, function(err, user) {
+		Mote.remove({
+			_id: request.params.mote_ip
+		}, function(err, mote) {
 			if (err)
 				response.send(err);
-			console.log(user);
-			response.json({ message: 'Successfully deleted' });
+			console.log(mote);
+			response.json({ success: true, message: 'Eliminado exitosamente' });
 		});
 	});
 
