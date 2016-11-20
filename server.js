@@ -9,7 +9,7 @@ var jwt    = require('jsonwebtoken');
 var trimNewlines = require('trim-newlines');
 var config = require('./config');
 var cors = require('cors');
-var reversePopulate = require('mongoose-reverse-populate');
+var PythonShell = require('python-shell');
 // var jwt = require('express-jwt');
 /**
 * Models
@@ -17,6 +17,7 @@ var reversePopulate = require('mongoose-reverse-populate');
 var User = require('./app/models/user');
 var Mote = require('./app/models/mote');
 var Network = require('./app/models/network');
+var Packet = require('./app/models/packet');
 
 app.use(cors());
 /**
@@ -436,6 +437,7 @@ router.route('/motes/:mote_ip/commands')
 router.route('/motes/:mote_ip/commands/:command')
 	.get(function(request, response) {
 		var command = request.params.command;
+		var mote_ip = request.params.mote_ip;
 		console.log(mote_ip);
 		console.log(command);
 		var req = coap.request("coap://["+mote_ip+"]/"+command);
@@ -473,6 +475,32 @@ router.route('/motes/:mote_ip/commands/:command')
 		console.log(request.body);
 		response.json({ message: 'User updated!' });
 	});
+
+	/**
+	* Rutas de los pacquetes capturados
+	*/
+	router.route('/packets')
+		.get(function(request, response) {
+			Packet.find().exec(function(err, packets) {
+				if (err)
+					response.status(400).send(err);
+		    response.json(packets);
+		  });
+		});
+
+
+
+	/* Ruta especial para iniciar la captura de paquetes */
+	router.route('/packets/start')
+		.get(function(request, response) {
+			PythonShell.run('liveCapture.py', function (err, results) {
+				console.log(results);
+				if (err)
+					response.status(400).send(err);
+			});
+			response.json({success: true, msg: 'Script capturando datos.'});
+		});
+
 
 	router.route('/lala', function() {
 		console.log(data[0]);
