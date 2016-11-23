@@ -59,7 +59,7 @@ var router = express.Router();
 
 
 router.get('/', function(request, response) {
-	response.json({ message: 'API CoAP' });
+	response.json({ success: true, message: 'API CoAP' });
 });
 
 /**
@@ -76,13 +76,16 @@ router.post('/signup', function(request, response) {
 			admin: request.body.admin
     });
     // save the user
-    newUser.save(function(err) {
+    newUser.save(function(err, userCreated) {
       if (err) {
 				/* Status 409 de 'Conflic' si el usuario ya existe */
         return response.status(409).json({success: false, msg: 'El usuario ya existe. Intente otro.'});
       }
-			/* Estatus 201 de resoursce*/
-      response.status(201).json({success: true, msg: 'Usuario creado exitosamente.'});
+			console.log(userCreated);
+			/* Estatus 201 de resource*/
+      response.status(201).json({
+				success: true, message: 'Usuario creado exitosamente.', _id: userCreated._id
+			});
     });
   }
 });
@@ -98,7 +101,6 @@ router.post('/auth', function(request, response) {
 			response.status(400).json({ success: false, message: 'Authentication failed. Usuario no encontrado.' });
     } else if (user) {
 			/* Comparacion de passwords */
-			console.log(user);
 			user.comparePassword(request.body.password, function(err, isMatch) {
 				if (err) throw err;
 				if(isMatch) {
@@ -108,7 +110,7 @@ router.post('/auth', function(request, response) {
 	        });
 
 	        // return the information including token as JSON
-	        response.json({
+	        response.status(200).json({
 	          success: true,
 	          token: token
 	        });
@@ -135,6 +137,16 @@ router.use(function(request, response, next) {
 			} else {
 				request.decoded = decoded;
 				request.user = decoded._doc;
+				console.log(request.user.admin);
+				if (!request.user.admin) {
+					var userPath = "/users";
+					if(request.method != "GET" || request['path'].indexOf(userPath) != -1) {
+						return response.status(403).send({
+							success: false,
+							message: 'No tienes los permisos necesarios para esta accion.'
+						});
+					}
+				}
 				next();
 			}
 		});
@@ -146,13 +158,24 @@ router.use(function(request, response, next) {
 	}
 });
 
+/**
+* Middleware de verificacion de rutas y administrador
+*/
+// router.use(function(request, response, next) {
+	// console.log(request.path);
+	// console.log(request.method);
+	// console.log(request.user.admin);
+	// var adminPath = ['/users'];
+	// var methods = ['GET', 'POST', 'PUT', 'DELETE'];
+
+// });
 
 /**
 * User Logged in Route
 */
 router.route('/me')
 .get(function(request, response) {
-	response.json(request.user);
+	response.status(200).json(request.user);
 });
 
 /**
@@ -163,7 +186,6 @@ router.route('/users')
 		User.find().populate(['networks']).exec(function(err, users) {
 			if (err)
 				response.status(400).send(err);
-			console.log(users);
 	    response.json(users);
 	  });
 	});
@@ -179,16 +201,15 @@ router.route('/users/:user_id')
 	.put(function(request, response) {
 		User.findById(request.params.user_id, function(err, user) {
 			if (err)
-				response.send(err);
+				response.status(404).json({ success: false, message: err });
 
 			user.username = request.body.username;
 			user.password = request.body.password;
 			user.admin = request.body.admin;
 			user.save(function(err) {
 				if (err)
-					response.send(err);
-				console.log(user);
-				response.json({ message: 'User updated!' });
+					response.status(400).json({ success: false, message: err });
+				response.status(200).json({ success: true, message: 'Usuario actualizado correctamente' });
 			});
 		});
 	})
@@ -197,9 +218,10 @@ router.route('/users/:user_id')
 			_id: request.params.user_id
 		}, function(err, user) {
 			if (err)
-				response.send(err);
+				response.json({ success: false, message: err });
+				// response.send(err);
 			console.log(user);
-			response.json({ message: 'Successfully deleted' });
+			response.json({ message: 'Usuario eliminado' });
 		});
 	});
 
