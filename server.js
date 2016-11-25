@@ -10,7 +10,7 @@ var trimNewlines = require('trim-newlines');
 var config = require('./config');
 var cors = require('cors');
 var PythonShell = require('python-shell');
-// var jwt = require('express-jwt');
+var async = require('async');
 /**
 * Models
 */
@@ -159,18 +159,6 @@ router.use(function(request, response, next) {
 });
 
 /**
-* Middleware de verificacion de rutas y administrador
-*/
-// router.use(function(request, response, next) {
-	// console.log(request.path);
-	// console.log(request.method);
-	// console.log(request.user.admin);
-	// var adminPath = ['/users'];
-	// var methods = ['GET', 'POST', 'PUT', 'DELETE'];
-
-// });
-
-/**
 * User Logged in Route
 */
 router.route('/me')
@@ -304,12 +292,42 @@ router.route('/networks/:network_id')
 */
 router.route('/motes')
 	.get(function(request, response) {
-		Mote.find(function(err, motes) {
-			if (err) {
-				response.status(404).json({'success': false, message: err});
-			}
-	    response.json(motes);
-	  });
+		if (!request.user.admin) {
+			User.findById(request.user._id).populate('networks').exec(function(err, user) {
+				if (err) {
+					response.status(404).json({'success': false, message: err});
+				}
+				Network.findById(user.networks[0]._id).populate('motes').exec(function(err, network) {
+					if (err) {
+						response.status(404).json({'success': false, message: err});
+					}
+					response.json(network.motes);
+				});
+				// Network.populate(user.networks,{ "path": "motes" },function(err,output) {
+				// 	if (err) throw err; // or do something
+				// 		console.log(output);
+				// });
+				// async.forEach(user, function(item,callback) {
+				// 		Network.populate(item.networks,{ "path": "motes" },function(err,output) {
+				// 			if (err) throw err; // or do something
+				// 				callback();
+				// 		});
+				// }, function(err) {
+				// 		// console.log(user.network.motes);
+				// 		// response.json(user);
+				// 		response.json(user);
+				// });
+		    // response.json(motes);
+		  });
+		}else{
+			Mote.find(function(err, motes) {
+				if (err) {
+					response.status(404).json({'success': false, message: err});
+				}
+		    response.json(motes);
+		  });
+		}
+
 	})
 	.post(function(request, response) {
 
