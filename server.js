@@ -185,7 +185,7 @@ router.route('/users')
 	.get(function(request, response) {
 		User.find().populate(['networks']).exec(function(err, users) {
 			if (err)
-				response.status(400).send(err);
+				response.status(400).json({ success: false, message: err });
 	    response.json(users);
 	  });
 	});
@@ -218,10 +218,9 @@ router.route('/users/:user_id')
 			_id: request.params.user_id
 		}, function(err, user) {
 			if (err)
-				response.json({ success: false, message: err });
-				// response.send(err);
+				response.status(404).json({ success: false, message: err });
 			console.log(user);
-			response.json({ message: 'Usuario eliminado' });
+			response.json({ success: true, message: 'Usuario eliminado' });
 		});
 	});
 
@@ -247,15 +246,6 @@ router.route('/networks')
 		if (!request.body.name || !request.body.address || !request.body.panid) {
 			response.status(400).json({success: false, msg: 'Debes indicar al menos un nombre, ubicacion(dirección) y un pan-id de la Red.'});
 		} else {
-			console.log("adssadsad");
-			console.log(request.body.users);
-			// User.findByIdAndUpdate({ "_id": { "$in": request.body.users } },
-			//   {$push: {"messages": {title: title, msg: msg}}},
-			//   {safe: true, upsert: true},
-			//   function(err, model) {
-			//       console.log(err);
-			//   }
-			// );
 			var newNetwork = new Network({
 				name: request.body.name,
 		    address: request.body.address,
@@ -281,19 +271,19 @@ router.route('/networks/:network_id')
 	.get(function(request, response) {
 		Network.findById(request.params.network_id, function(err, network) {
 			if (err)
-				response.send(err);
+				response.status(404).json({'success': false, message: err});
 			response.json(network);
 		});
 	})
 	.put(function(request, response) {
 		Network.findById(request.params.network_id, function(err, network) {
 			if (err)
-				response.send(err);
+				response.status(404).json({'success': false, message: err});
 
 			network.username = request.body.username;
 			network.save(function(err) {
 				if (err)
-					response.send(err);
+					response.status(400).json({'success': false, message: err});
 				console.log(network);
 				response.json({ message: 'Network updated!' });
 			});
@@ -304,8 +294,7 @@ router.route('/networks/:network_id')
 			_id: request.params.network_id
 		}, function(err, network) {
 			if (err)
-				response.send(err);
-			console.log(network);
+				response.status(400).json({'success': false, message: err});
 			response.json({ message: 'Network Successfully deleted' });
 		});
 	});
@@ -317,8 +306,7 @@ router.route('/motes')
 	.get(function(request, response) {
 		Mote.find(function(err, motes) {
 			if (err) {
-				response.send(err);
-				console.log("assas");
+				response.status(404).json({'success': false, message: err});
 			}
 	    response.json(motes);
 	  });
@@ -329,77 +317,42 @@ router.route('/motes')
 		mote.name = request.body.name;
 		mote.mac = request.body.mac;
 		mote.panid = request.body.panid;
-		// mote.id16b = request.body.id16b;
 		mote.eui64 = request.body.eui64;
 		mote.dagroot = false;
 		mote.ipv6 = request.body.ipv6;
 		mote.commands = request.body.commands;
 		mote.commands = [];
-		console.log(request.body);
 		mote.save(function(err) {
 			if (err)
-				response.send(err);
+				response.status(400).json({'success': false, message: err});
 			response.json({ message: 'Mote created!' });
 		});
 
 	});
 
-
 router.route('/motes/:mote_ip')
 	.get(function(request, response) {
-		// var mote_ip = "bbbb::12:4b00:3a5:6b3c";
-		var mote_ip = request.params.mote_ip;
-		// var req = coap.request("coap://["+request.params.mote_ip+"]/root");
-
-		var req = coap.request("coap://["+mote_ip+"]/"+commandList[command]+"");
-		// var req = coap.request("coap://[bbbb::12:4b00:3a5:6b3c]/root");
-		req.on('error', function(err) {
-			console.log(err);
-			response.json({ response: 'error' });
-		});
-
-		req.on('timeout', function () {
-			response.json({ response: 'timeout' });
-			console.log('timeout');
-		});
-
-		req.on('response', function(res) {
-			console.log("res: "+res);
-			if(!res) {
-				console.log("not respond");
-			}
-			res.pipe(bl(function(err, data) {
-				console.log("err: "+err);
-				console.log("data: "+data);
-				console.log(data[0]);
-				console.log(data[1]);
-				console.log(parseInt(data[0]));
-				// var temp1 = (data[0] << 8) + data[1]
-				// var temperatura1 =-46.86+175.72*temp1/65536
-				// console.log(temp1);
-				// console.log(temperatura1);
-				// var hum1 = (data[0] << 8)+data[1]
-				// console.log(hum1);
-				// var humedad1 = -6.0+125.0 * hum1 / 65536
-				// console.log(humedad1);
-				// if(err) {
-				// 	console.log(err);
-				// }
-				response.json({ response: 'yes' });
-				 dataResponse = trimNewlines(data.toString());
-			 }));
-		});
-		req.end();
+		Mote.find({'ipv6': request.params.mote_ip}).exec(function(err, mote) {
+			if (err)
+				response.status(400).json({'success': false, message: err});
+	    response.json(mote);
+	  });
 	})
 	.put(function(request, response) {
-		User.findById(req.params.user_id, function(err, user) {
+		Mote.find({'ipv6': mote_ip}, function(err, mote) {
 			if (err)
-				response.send(err);
+				response.status(404).json(err);
 
-			user.username = request.body.username;
-			user.save(function(err) {
+			mote.name = request.body.name;
+			mote.mac = request.body.mac;
+			mote.panid = request.body.panid;
+			mote.eui64 = request.body.eui64;
+			mote.dagroot = false;
+			mote.ipv6 = request.body.ipv6;
+			mote.commands = request.body.commands;
+			mote.save(function(err) {
 				if (err)
-					response.send(err);
+					response.status(400).json({'success': false, message: err});
 				console.log(user);
 				response.json({ message: 'User updated!' });
 			});
@@ -407,21 +360,21 @@ router.route('/motes/:mote_ip')
 	})
 	.delete(function(request, response) {
 		Mote.remove({
-			_id: request.params.mote_ip
+			'ipv6': request.params.mote_ip
 		}, function(err, mote) {
 			if (err)
-				response.send(err);
-			console.log(mote);
-			response.json({ success: true, message: 'Eliminado exitosamente' });
+				response.status(404).json({'success': false, message: err});
+			response.status(200).json({ success: true, message: 'Eliminado exitosamente' });
 		});
 	});
 
-/**/
+/**
+* Commands Motes Routes
+*/
 
 router.route('/motes/:mote_ip/commands')
 .get(function(request, response){
 	var mote_ip = request.params.mote_ip;
-	// var mote_ip = 'bbbb::1415:92cc:0:2';
 	console.log(mote_ip);
 	var command = '.well-known/core';
 	var req = coap.request("coap://["+mote_ip+"]/"+command);
@@ -434,14 +387,12 @@ router.route('/motes/:mote_ip/commands')
 	});
 
 	req.on('timeout', function (timeout) {
-		console.log('timeout');
-		response.json({ response: timeout });
+		console.log(timeout);
+		response.status(408).json({ success:false, message: timeout });
 	});
 
 	req.on('response', function(res) {
-		console.log("res: "+res);
 		res.pipe(bl(function(err, data) {
-			console.log("data: "+data);
 			var dataResponse = trimNewlines(data.toString()).split(',');
 			response.status(200).json({
 				mote: mote_ip,
@@ -453,15 +404,10 @@ router.route('/motes/:mote_ip/commands')
 	req.end();
 });
 
-/**
-* Rutas de los comandos de los nodos
-*/
 router.route('/motes/:mote_ip/commands/:command')
 	.get(function(request, response) {
 		var command = request.params.command;
 		var mote_ip = request.params.mote_ip;
-		console.log(mote_ip);
-		console.log(command);
 		var req = coap.request("coap://["+mote_ip+"]/"+command);
 		var errArray = [];
 		req.on('error', function(err) {
@@ -472,7 +418,7 @@ router.route('/motes/:mote_ip/commands/:command')
 		});
 
 		req.on('timeout', function (timeout) {
-			response.status(503).json({ response: timeout });
+			response.status(408).json({ response: timeout });
 		});
 
 		req.on('response', function(res) {
@@ -499,7 +445,7 @@ router.route('/motes/:mote_ip/commands/:command')
 	});
 
 	/**
-	* Rutas de los pacquetes capturados
+	* Rutas de los paquetes capturados
 	*/
 	router.route('/packets')
 		.get(function(request, response) {
@@ -516,13 +462,39 @@ router.route('/motes/:mote_ip/commands/:command')
 	router.route('/packets/start')
 		.get(function(request, response) {
 			PythonShell.run('liveCapture.py', function (err, results) {
+				if (err)
+					response.status(400).send(err);
+			});
+			response.json({success: true, message: 'Script capturando datos.'});
+		});
+	router.route('/packets/stop')
+		.get(function(request, response) {
+			PythonShell.run('liveCapture.py', function (err, results) {
+				console.log(err);
 				console.log(results);
 				if (err)
 					response.status(400).send(err);
 			});
-			response.json({success: true, msg: 'Script capturando datos.'});
+			response.json({success: true, message: 'Script capturando datos.'});
 		});
 
+	router.route('/packets/search')
+		.get(function(request, response) {
+			var queries = [''];
+			console.log(request.query);
+			var querys = ['layers', 'ipv6_src', 'ipv6_dst', 'panid'];
+			if(request.query == 'layer'){
+
+			}
+			Packet.find({'layers': request.query.layer }).exec(function(err, packets) {
+				if (err)
+					response.status(400).send(err);
+				response.json(packets);
+			});
+			// response.json({success: true, message: 'Script capturando datos.'});
+		});
+
+	// entrants.find({ pincode: { $ne: null } })
 
 	router.route('/lala', function() {
 		console.log(data[0]);
