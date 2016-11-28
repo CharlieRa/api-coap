@@ -71,6 +71,7 @@ Internal Server Error
   <!-- *************************************** -->
 
 3) /auth
+
   - metodo: **POST**
   - descripción: Autenticar usuarios en el sistema
   - autentificación: No.
@@ -95,12 +96,12 @@ Internal Server Error
 | :------------- | :------------- |
 | ElUsuarioNoExiste        |  El usuario no existe en el sistema       |
 | NoParametros        |  No se entregaron parametros para autenticar el usuario |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
-  {
+    {
       "success": true,
       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyIkX18iOnsic3RyaWN0TW9kZSI6dHJ1ZSwiZ2V0dGVycyI6e30sIndhc1BvcHVsYXRlZCI6ZmFsc2UsImFjdGl2ZVBhdGhzIjp7InBhdGhzIjp7InBhc3N3b3JkIjoiaW5pdCIsInVzZXJuYW1lIjoiaW5pdCIsImFkbWluIjoiaW5pdCIsIm5ldHdvcmtzIjoiaW5pdCIsIl9fdiI6ImluaXQiLCJfaWQiOiJpbml0In0sInN0YXRlcyI6eyJkZWZhdWx0Ijp7fSwiaW5pdCI6eyJfX3YiOnRydWUsImFkbWluIjp0cnVlLCJuZXR3b3JrcyI6dHJ1ZSwicGFzc3dvcmQiOnRydWUsInVzZXJuYW1lIjp0cnVlLCJfaWQiOnRydWV9LCJtb2RpZnkiOnt9LCJyZXF1aXJlIjp7fX0sInN0YXRlTmFtZXMiOlsicmVxdWlyZSIsIm1vZGlmeSIsImluaXQiLCJkZWZhdWx0Il19fSwiaXNOZXciOmZhbHNlLCJfbWF4TGlzdGVuZXJzIjowLCJfZG9jIjp7ImFkbWluIjp0cnVlLCJuZXR3b3JrcyI6WyI1ODJhNWEwZTIzNDExZjU0MzYwMDAwMDEiXSwiX192IjowLCJwYXNzd29yZCI6IiQyYSQxMCRQSUpQZ2x0YUNRWXF2dWE1UHlZdlRlTXpHV2NYWmRZSUh2V05mVEZLZVV5ZER0Y053Ty5DTyIsInVzZXJuYW1lIjoiYWRtaW4iLCJfaWQiOiI1ODJjZGI1MjNiNzkxYzQ3MDMwMDAwMDEifSwiX3ByZXMiOnsic2F2ZSI6W251bGwsbnVsbCxudWxsLG51bGxdfSwiX3Bvc3RzIjp7InNhdmUiOltdfSwiaWF0IjoxNDc5ODU3NDg1LCJleHAiOjE0Nzk5NDM4ODV9.ot9DWV9dXOgPi_2C5QH33GYeknCZemVc63pMNcEUiTU"
-  }
+    }
   ```
 
 <!-- ******************************************* -->
@@ -127,7 +128,7 @@ Internal Server Error
 | Campo          | Descripcion    |
 | :------------- | :------------- |
 | TokenExpired        |  Token con tiempo expirado       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
   {
     {
@@ -170,7 +171,7 @@ Internal Server Error
 | Campo          | Descripcion    |
 | :------------- | :------------- |
 | ErrorDeAcceso        |  no tienes los permisos necesarios para acceder a este recurso       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
   [
     {
@@ -217,7 +218,7 @@ Internal Server Error
 | :------------- | :------------- |
 | ElUsuarioExiste        |  El usuario ya existe en el sistema       |
 | Prohibido        |  Ruta prohibida. Solo usuarios autenticados pueden ver esta informacion  |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
     {
       "_id": "5834d65222afdfa367000001",
@@ -257,7 +258,7 @@ Internal Server Error
 | ElUsuarioNoExiste        |  El usuario no existe en el sistema       |
 | ElUsuarioExiste        |  El usuario ya existe en el sistema       |
 | NoParametros        |  No se entregaron parametos para actulizar al usuario |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
   {
     "success": true,
@@ -318,7 +319,7 @@ Internal Server Error
 | Campo          | Descripcion    |
 | :------------- | :------------- |
 | ErrorDeAcceso        |  no tienes los permisos necesarios para acceder a este recurso       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
   [
     {
@@ -424,7 +425,7 @@ Internal Server Error
 | :------------- | :------------- |
 | LaRedNoExiste   |  La red no existe en el sistema       |
 | ErrorDeAcceso  |  No tiene lo permisos para acceder a este recurso       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
   {
     "success": true,
@@ -489,7 +490,7 @@ Internal Server Error
 | Campo          | Descripcion    |
 | :------------- | :------------- |
 | ErrorDeAcceso        |  no tienes los permisos necesarios para acceder a este recurso       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
     [
       {
@@ -544,7 +545,7 @@ Internal Server Error
 | Campo          | Descripcion    |
 | :------------- | :------------- |
 | ErrorDeAcceso        |  No tiene lo permisos para acceder a este recurso       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
   {
     "_id": "58112cd0868570e478000001",
@@ -589,7 +590,7 @@ Internal Server Error
 | :------------- | :------------- |
 | ElMoteExiste   |  El mote no existe en el sistema       |
 | ErrorDeAcceso  |  No tiene lo permisos para acceder a este recurso       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
   {
     "success": true,
