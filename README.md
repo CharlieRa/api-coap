@@ -685,13 +685,13 @@ Internal Server Error
 | EnetUnReach        |  la red es inalcanzable       |
   - Ejemplo(Respuesta): Objeto.
   ```
-  {
-    "mote": "bbbb::1415:92cc:0:2",
-    "query": "i",
-    "response": [
-      "OpenWSN 1.9.0\nPython\nPython\nPython"
-    ]
-  }
+    {
+      "mote": "bbbb::1415:92cc:0:2",
+      "query": "i",
+      "response": [
+        "OpenWSN 1.9.0\nPython\nPython\nPython"
+      ]
+    }
   ```
 
 - metodo:  **PUT**
@@ -724,7 +724,7 @@ Internal Server Error
 | :------------- | :------------- |
 | ElMoteExiste   |  El mote no existe en el sistema       |
 | ErrorDeAcceso  |  No tiene lo permisos para acceder a este recurso       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
   {
     "success": true,
@@ -732,9 +732,6 @@ Internal Server Error
     _id: 58112cd0868570e478000001
   }
   ```
-
-
-
 <!-- ********************************************************* -->
 <!-- Documentacion de rutas para captura de paquetes en la red -->
 <!-- ********************************************************* -->
@@ -770,31 +767,31 @@ Internal Server Error
 | EnetUnReach        |  la red es inalcanzable       |
 - Ejemplo(Respuesta): Objeto.
   ```
-  [
-    {
-      "_id": "583146306bb048719d097c4e",
-      "src_port": 0,
-      "coap_code": null,
-      "local_ipv6_dst": "ff02::1a",
-      "ipv6_dst": "bbbb::1",
-      "local_ipv6_src": "fe80::1615:92cc:0:3",
-      "highest_layer": "icmpv6",
-      "dst_port": 17754,
-      "ipv6_src": "bbbb::1",
-      "panid": "ca-fe",
-      "layers": [
-        "raw",
-        "ipv6",
-        "udp",
-        "zep",
-        "wpan",
-        "data",
-        "6lowpan",
-        "ipv6",
-        "icmpv6"
-      ]
-    }
-  ]
+    [
+      {
+        "_id": "583146306bb048719d097c4e",
+        "src_port": 0,
+        "coap_code": null,
+        "local_ipv6_dst": "ff02::1a",
+        "ipv6_dst": "bbbb::1",
+        "local_ipv6_src": "fe80::1615:92cc:0:3",
+        "highest_layer": "icmpv6",
+        "dst_port": 17754,
+        "ipv6_src": "bbbb::1",
+        "panid": "ca-fe",
+        "layers": [
+          "raw",
+          "ipv6",
+          "udp",
+          "zep",
+          "wpan",
+          "data",
+          "6lowpan",
+          "ipv6",
+          "icmpv6"
+        ]
+      }
+    ]
   ```
 
 14) /packets/start
