@@ -613,12 +613,12 @@ Internal Server Error
 | :------------- | :------------- |
 | ElIpMoteNoExiste        |  El id proporcionado no existe en el sistema       |
 - Ejemplo(Respuesta): Objeto.
-```
-{
-  "success": true,
-  "message": "Mote eliminado.",
-}
-```
+  ```
+    {
+      "success": true,
+      "message": "Mote eliminado.",
+    }
+  ```
 
 <!-- ********************************************* -->
 <!-- Documentacion de rutas para Comandos de Motes -->
@@ -646,19 +646,19 @@ Internal Server Error
 | :------------- | :------------- |
 | Timeout        |  La red es alcanzable pero el Mote no responde       |
 | EnetUnReach        |  la red es inalcanzable       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
-  {
-    "mote": "bbbb::1415:92cc:0:2",
-    "query": ".well-known/core",
-    "response": [
-      "</rt>",
-      "</storm>",
-      "</l>",
-      "</i>",
-      "</6t>"
-    ]
-  }
+    {
+      "mote": "bbbb::1415:92cc:0:2",
+      "query": ".well-known/core",
+      "response": [
+        "</rt>",
+        "</storm>",
+        "</l>",
+        "</i>",
+        "</6t>"
+      ]
+    }
   ```
 
 12) /motes/mote_ip/commands/:command
@@ -683,7 +683,7 @@ Internal Server Error
 | :------------- | :------------- |
 | Timeout        |  La red es alcanzable pero el Mote no responde       |
 | EnetUnReach        |  la red es inalcanzable       |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
     {
       "mote": "bbbb::1415:92cc:0:2",
