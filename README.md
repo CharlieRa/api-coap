@@ -29,7 +29,9 @@ Internal Server Error
 <!-- *********************************************** -->
 <!-- Documentacion de rutas de registro de usuarios  -->
 <!-- *********************************************** -->
+
 2) /signup
+
   - metodo: **POST**
   - descripción: Crear nuevos usuarios Cliente en el sistema
   - autentificación: No.
@@ -55,17 +57,19 @@ Internal Server Error
 | :------------- | :------------- |
 | ElUsuarioExiste        |  El usuario ya existe en el sistema       |
 | NoParametros        |  No se entregaron parametos para crear el usuario |
-  - Ejemplo(Respuesta): Objeto.
+- Ejemplo(Respuesta): Objeto.
   ```
-  {
+    {
       "success": true,
       "message": "Usuario creado exitosamente.",
       "_id": "5834d612c817b66367000001"
-  }
+    }
   ```
+
   <!-- *************************************** -->
   <!-- Documentacion de rutas de autenticacion -->
   <!-- *************************************** -->
+
 3) /auth
   - metodo: **POST**
   - descripción: Autenticar usuarios en el sistema
