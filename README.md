@@ -769,35 +769,35 @@ Internal Server Error
 | Timeout        |  La red es alcanzable pero el Mote no responde       |
 | EnetUnReach        |  la red es inalcanzable       |
 - Ejemplo(Respuesta): Objeto.
-```
-[
-  {
-    "_id": "583146306bb048719d097c4e",
-    "src_port": 0,
-    "coap_code": null,
-    "local_ipv6_dst": "ff02::1a",
-    "ipv6_dst": "bbbb::1",
-    "local_ipv6_src": "fe80::1615:92cc:0:3",
-    "highest_layer": "icmpv6",
-    "dst_port": 17754,
-    "ipv6_src": "bbbb::1",
-    "panid": "ca-fe",
-    "layers": [
-      "raw",
-      "ipv6",
-      "udp",
-      "zep",
-      "wpan",
-      "data",
-      "6lowpan",
-      "ipv6",
-      "icmpv6"
-    ]
-  }
-]
-```
+  ```
+  [
+    {
+      "_id": "583146306bb048719d097c4e",
+      "src_port": 0,
+      "coap_code": null,
+      "local_ipv6_dst": "ff02::1a",
+      "ipv6_dst": "bbbb::1",
+      "local_ipv6_src": "fe80::1615:92cc:0:3",
+      "highest_layer": "icmpv6",
+      "dst_port": 17754,
+      "ipv6_src": "bbbb::1",
+      "panid": "ca-fe",
+      "layers": [
+        "raw",
+        "ipv6",
+        "udp",
+        "zep",
+        "wpan",
+        "data",
+        "6lowpan",
+        "ipv6",
+        "icmpv6"
+      ]
+    }
+  ]
+  ```
 
-13) /packets/start
+14) /packets/start
 
 - metodo: **GET**
 - descripción: Inicia la captura de paquetes de la red
@@ -812,6 +812,7 @@ Internal Server Error
  | success | Boolean | Boolean de exito en el comienzo del script |
  | message | String | Mensaje de informacion. |
 
+
 **Error:** 4xx
 
 | Campo          | Descripcion    |
@@ -819,9 +820,9 @@ Internal Server Error
 | ErrorDeAcceso        |  no tienes los permisos necesarios para acceder a este recurso       |
 | ErrorAlEjecutarScript | Error al ejecutar el script       |
 - Ejemplo(Respuesta): Objeto.
-```
-  {
-    "success": true,
-    "msg": "Script capturando datos."
-  }
-```
+  ```
+    {
+      "success": true,
+      "msg": "Script capturando datos."
+    }
+  ```
